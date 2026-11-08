@@ -1,10 +1,19 @@
-<div align=“center”>
+<div align="center">
 
 # 轻妆 · Claude Lite（dsh-claude-lite）
 
 **Claude Code Desktop 观感的轻量复刻套件：皮肤 + 侧栏增强 + 模型行品牌标 + 会话标题整理。**
 
 > 简化不将就：样式体积约为原版的 1/40，客户端脚本零依赖。
+
+## 预览
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/claude-lite-home-light.png" alt="轻妆亮色首页：品牌行、侧栏日期分组、模型行词标" /></td>
+    <td align="center" width="50%"><img src="docs/screenshots/claude-lite-settings-overlay.png" alt="轻妆设置浮层：品牌行自定义与类别 emoji 自定义" /></td>
+  </tr>
+</table>
 
 </div>
 

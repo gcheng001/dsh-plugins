@@ -8,6 +8,8 @@
 
 Claude Code Desktop 观感的轻量复刻：纯 CSS 皮肤 + 侧栏日期分组 + 模型行厂商词标 + 会话标题整理（类别 emoji 可自定义）。样式体积约为原版的 1/40，详见[插件目录](plugins/dsh-claude-lite/)。
 
+![轻妆 · Claude Lite 亮色首页](plugins/dsh-claude-lite/docs/screenshots/claude-lite-home-light.png)
+
 安装：
 
 ```sh
