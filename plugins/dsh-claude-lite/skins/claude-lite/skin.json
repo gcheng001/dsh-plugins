@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schemas.linxin666.org/dsh-skin/v2.json",
+  "skinManifestVersion": 2,
+  "id": "claude-lite",
+  "name": "轻妆 · Claude Lite",
+  "nameEn": "Claude Lite",
+  "author": "摩尚（高澄律师）",
+  "tagline": "Claude Code Desktop 观感的轻量复刻 · 暖米色画布 · 陶土橙强调",
+  "description": "轻妆：Nwflower/dsh-claude-style 的轻量简化复刻。以官方 --dsw-* 设计令牌整体重映射出 Claude Code Desktop 式的暖米/暖炭双态观感，侧栏 24px 密度与排版复刻；样式体积约为原版的 1/40，零网络字体阻塞、零背景媒体。随 dsh-claude-lite 插件一同分发。",
+  "tags": [
+    "claude",
+    "warm",
+    "lightweight",
+    "fast"
+  ],
+  "accent": "#d97757",
+  "order": 9,
+  "version": "1.0.0",
+  "sourceUrl": "https://github.com/Nwflower/dsh-claude-style",
+  "attribution": "观感与设计语言源自 Nwflower/dsh-claude-style（MIT）；本皮肤为其轻量化 CSS 重写，非 Anthropic 官方作品",
+  "contributes": {
+    "stylesheet": "skin.css"
+  }
+}

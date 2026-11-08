@@ -1,0 +1,4 @@
+# dsh-claude-lite (轻妆) bundle patch: inserts its client row into the web roster.
+- insert:
+    - id: ui-claude-lite
+      name: dsh-claude-lite

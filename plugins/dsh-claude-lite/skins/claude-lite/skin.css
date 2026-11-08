@@ -1,0 +1,506 @@
+/* 轻妆 · Claude Lite（claude-lite）v1.2
+ * 纯 CSS 资产皮肤：仅重映射官方 --dsw-* 设计令牌 + 轻度语义层修饰。
+ * 性能预算：零网络字体、零图片、零 JS、单文件 ≤40KB。
+ * 亮色锚 :root，暗色锚 body[data-ds-dark-theme]；选择器由皮肤中心统一
+ * 作用域限定在 html[data-dsh-skin="claude-lite"] 下。
+ * 配色观感取材 Claude Code Desktop（暖米/暖炭 + 陶土橙）；
+ * token 词汇表参照皮肤中心契约与内置皮肤 blue-fantasy（Apache-2.0）。
+ */
+
+/* ── 0. 基底（防闪屏的最小兜底） ─────────────────────────────── */
+
+:root {
+  color: #29261b;
+  background-color: #faf9f5;
+}
+
+body[data-ds-dark-theme] {
+  color: #f5f4ee;
+  background-color: #262624;
+}
+
+/* ── 0.5 排版复刻（Claude 字体体系；@font-face 由 dsh-claude-lite 提供（上架版仅随 OFL 字体，Anthropic 专有字体不随包分发）） ──
+ * 关键：宿主在 body 上定义 --dsw-font-family 并留了官方定制缝
+ * --dsh-font-family-text / --dsh-font-family-code——必须走缝或在 body 级覆写，
+ * 写在 html 层会被 body 的近亲定义压住（v0.4 字体没生效的原因）。 */
+
+:root {
+  /* 官方字体定制缝（html 级即可流入 body 的 var() 解析） */
+  --dsh-font-family-text: "Anthropic Sans Web Text", "Claude Style Inter", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --dsh-font-family-code: "Anthropic Mono Web", "JetBrains Mono", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --dsh-claude-font-prose: "Anthropic Serif Web Text", "Claude Style Noto Serif", Georgia, "Times New Roman", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
+  --dsw-font-family: "Anthropic Sans Web Text", "Claude Style Inter", "Noto Sans SC", "Source Han Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* body 级覆写（html body 提高特异性，稳压主题的 body 定义）：
+ * Claude 的灵魂——会话正文与标题用衬线体，代码用 Anthropic Mono。
+ * UI 字体不用在这里覆写：官方缝 --dsh-font-family-text 已在上方接入。 */
+html body {
+  --dsw-font-markdown-base-font-family: var(--dsh-claude-font-prose);
+  --dsw-font-markdown-base: var(--dsh-content-font-size, 14px) / calc(24px + var(--dsh-content-font-delta, 0px)) var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h1-font-family: var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h2-font-family: var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h3-font-family: var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h4-font-family: var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h1: 700 calc(20px + var(--dsh-content-font-delta, 0px)) / calc(28px + var(--dsh-content-font-delta, 0px)) var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h2: 700 calc(18px + var(--dsh-content-font-delta, 0px)) / calc(26px + var(--dsh-content-font-delta, 0px)) var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h3: 700 calc(16px + var(--dsh-content-font-delta, 0px)) / calc(24px + var(--dsh-content-font-delta, 0px)) var(--dsh-claude-font-prose);
+  --dsw-font-markdown-h4: 700 var(--dsh-content-font-size, 14px) / calc(22px + var(--dsh-content-font-delta, 0px)) var(--dsh-claude-font-prose);
+  --dsw-font-markdown-code-font-family: var(--dsh-claude-font-code);
+  --dsw-font-markdown-code-block-font-family: var(--dsh-claude-font-code);
+  --ds-font-family-code: "Anthropic Mono Web", "JetBrains Mono", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* 兜底：语义属性直达（皮肤中心适配器为官方 DOM 补打的锚点） */
+[data-dsh-part="message-body"] { font-family: var(--dsh-claude-font-prose); }
+
+/* ── 1. L1 令牌重映射 · 亮色（暖米画布） ─────────────────────── */
+
+:root {
+  --dsw-alias-bg-base: #faf9f5;
+  --dsw-alias-bg-layer-1: #faf9f5;
+  --dsw-alias-bg-layer-2: #f5f4ee;
+  --dsw-alias-bg-layer-3: #f0eee6;
+  --dsw-alias-bg-mask-1: #29261b66;
+  --dsw-alias-bg-mask-2: #29261b33;
+  --dsw-alias-bg-mask-3: #29261b80;
+  --dsw-alias-bg-mask-photo: #1f1e1de0;
+  --dsw-alias-bg-module-platform: #f5f4ee;
+  --dsw-alias-bg-multi-select: #f0eee6cc;
+  --dsw-alias-bg-overlay: #faf9f5eb;
+  --dsw-alias-bg-skeleton: #29261b0f;
+  --dsw-alias-border-inverted2: #fff9;
+  --dsw-alias-border-inverted: #fff6;
+  --dsw-alias-border-l1: #29261b14;
+  --dsw-alias-border-l2-darkmode-thin: #29261b1a;
+  --dsw-alias-border-l2: #29261b1f;
+  --dsw-alias-border-l3: #29261b29;
+  --dsw-alias-border-l4: #29261b40;
+  --dsw-alias-brand-primary-invert: #fff;
+  --dsw-alias-brand-primary: #d97757;
+  --dsw-alias-brand-text: #3d3929;
+  --dsw-alias-button-contrast-fill: #c15f3c;
+  --dsw-alias-button-elevated-fill: #fff;
+  --dsw-alias-button-floating-fill: #fff;
+  --dsw-alias-button-floating-hover: #f5f4ee;
+  --dsw-alias-button-ghost-active-border: #e89575;
+  --dsw-alias-button-ghost-active-fill: #f5e5dc;
+  --dsw-alias-button-ghost-active-hover: #efd9cd;
+  --dsw-alias-button-info-fill: #d97757;
+  --dsw-alias-button-info-hover: #c15f3c;
+  --dsw-alias-button-primary-dimmed: #f0ddd3;
+  --dsw-alias-button-primary-fill: #d97757;
+  --dsw-alias-button-primary-hover: #c15f3c;
+  --dsw-alias-button-tool-bar-fill-invisible: #d9775733;
+  --dsw-alias-button-tool-bar-fill: #d9775780;
+  --dsw-alias-button-tool-bar-hover: #d9775799;
+  --dsw-alias-interactive-bg-active: #d9775724;
+  --dsw-alias-interactive-bg-hover-accent: #d977572e;
+  --dsw-alias-interactive-bg-hover-danger: #bf4d431f;
+  --dsw-alias-interactive-bg-hover-solid: #f0eee6;
+  --dsw-alias-interactive-bg-hover: #d9775714;
+  --dsw-alias-label-caption: #87867f;
+  --dsw-alias-label-dimmed: #a3a099;
+  --dsw-alias-label-primary-dimmed: #56554c;
+  --dsw-alias-label-primary-foreground: #fff;
+  --dsw-alias-label-primary-inverted: #fff;
+  --dsw-alias-label-primary: #29261b;
+  --dsw-alias-label-secondary: #56554c;
+  --dsw-alias-label-tertiary: #6e6c60;
+  --dsw-alias-markdown-citation: #f0eee699;
+  --dsw-alias-markdown-code-block-banner: #f0eee694;
+  --dsw-alias-markdown-code-block: #f0eee694;
+  --dsw-alias-markdown-code-segment-selected: #fffc;
+  --dsw-alias-markdown-code-segment-unselected: #f5f4ee99;
+  --dsw-alias-markdown-inline-code: #eeece299;
+  --dsw-alias-markdown-placeholder: #f0eee694;
+  --dsw-alias-markdown-tag: #eeece299;
+  --dsw-alias-scrollbar-bg-l1: #ddd9cc;
+  --dsw-alias-scrollbar-bg-l2: #ddd9cc;
+  --dsw-alias-scrollbar-hover-l1: #c9c4b4;
+  --dsw-alias-scrollbar-hover-l2: #c9c4b4;
+  --dsw-alias-state-business-primary: #d97757;
+  --dsw-alias-state-business-tertiary: #f5e5dc;
+  --dsw-alias-state-error-primary: #bf4d43;
+  --dsw-alias-state-error-secondary: #d16a5f;
+  --dsw-alias-state-success-primary: #788c5d;
+  --dsw-alias-state-success-secondary: #8ba06b;
+  --dsw-alias-state-success-tertiary: #eef2e4;
+  --dsw-alias-state-warn-label: #8a5a16;
+  --dsw-alias-state-warn-primary: #bc791e;
+  --dsw-alias-state-warn-secondary: #d29a4a;
+  --dsw-alias-state-warn-tertiary: #f5ead6;
+  --dsw-alias-toast-bg: #c15f3c;
+  --dsw-alias-tooltip-bg: #fdf9e3;
+  --dsw-alias-tooltip-fg: #29261b;
+  --dsw-specific-bubble-highlight: #efd9cd;
+  --dsw-specific-bubble: #f5e5dc;
+  --dsw-specific-input-major: #ffffff;
+  --dsw-specific-login-input: #ffffff;
+  --dsw-specific-menu: #faf9f5f0;
+  --dsw-specific-selector: #f5f4eed9;
+  --dsw-specific-sidebar-fill: #f0eee6;
+  --dsw-specific-sidebar-nav-item-active-accent: #e89575;
+  --dsw-specific-sidebar-nav-item-active: #f5e5dc;
+  --dsw-specific-sidebar-nav-item-hover: #eae7db;
+  --dsw-specific-tip: #faf9f5;
+}
+
+/* ── 2. L1 令牌重映射 · 暗色（暖炭画布） ─────────────────────── */
+
+body[data-ds-dark-theme] {
+  --dsw-alias-bg-base: #262624;
+  --dsw-alias-bg-layer-1: #30302e;
+  --dsw-alias-bg-layer-2: #262624;
+  --dsw-alias-bg-layer-3: #1f1e1d;
+  --dsw-alias-bg-mask-1: #0000008c;
+  --dsw-alias-bg-mask-2: #0000004d;
+  --dsw-alias-bg-mask-3: #0009;
+  --dsw-alias-bg-mask-photo: #141312e6;
+  --dsw-alias-bg-module-platform: #30302e;
+  --dsw-alias-bg-multi-select: #3a3833cc;
+  --dsw-alias-bg-overlay: #262624eb;
+  --dsw-alias-bg-skeleton: #ffffff0f;
+  --dsw-alias-border-inverted2: #fff9;
+  --dsw-alias-border-inverted: #fff6;
+  --dsw-alias-border-l1: #f0eee612;
+  --dsw-alias-border-l2-darkmode-thin: #f0eee61a;
+  --dsw-alias-border-l2: #f0eee624;
+  --dsw-alias-border-l3: #f0eee633;
+  --dsw-alias-border-l4: #f0eee647;
+  --dsw-alias-brand-primary-invert: #262624;
+  --dsw-alias-brand-primary: #d97757;
+  --dsw-alias-brand-text: #e8c4b2;
+  --dsw-alias-button-contrast-fill: #c15f3c;
+  --dsw-alias-button-elevated-fill: #30302e;
+  --dsw-alias-button-floating-fill: #1f1e1d;
+  --dsw-alias-button-floating-hover: #30302e;
+  --dsw-alias-button-ghost-active-border: #e08b64;
+  --dsw-alias-button-ghost-active-fill: #3a352e;
+  --dsw-alias-button-ghost-active-hover: #453e34;
+  --dsw-alias-button-info-fill: #c15f3c;
+  --dsw-alias-button-info-hover: #d97757;
+  --dsw-alias-button-primary-dimmed: #4a3a30;
+  --dsw-alias-button-primary-fill: #c15f3c;
+  --dsw-alias-button-primary-hover: #d97757;
+  --dsw-alias-button-tool-bar-fill-invisible: #e8957552;
+  --dsw-alias-button-tool-bar-fill: #e8957580;
+  --dsw-alias-button-tool-bar-hover: #e8957599;
+  --dsw-alias-interactive-bg-active: #e895752e;
+  --dsw-alias-interactive-bg-hover-accent: #e8957533;
+  --dsw-alias-interactive-bg-hover-danger: #d16a5f24;
+  --dsw-alias-interactive-bg-hover-solid: #30302e;
+  --dsw-alias-interactive-bg-hover: #ffffff0d;
+  --dsw-alias-label-caption: #87867f;
+  --dsw-alias-label-dimmed: #6e6c60;
+  --dsw-alias-label-primary-dimmed: #c2c0b6;
+  --dsw-alias-label-primary-foreground: #fff;
+  --dsw-alias-label-primary-inverted: #1f1e1d;
+  --dsw-alias-label-primary: #f5f4ee;
+  --dsw-alias-label-secondary: #c2c0b6;
+  --dsw-alias-label-tertiary: #98968a;
+  --dsw-alias-markdown-citation: #1f1e1d9e;
+  --dsw-alias-markdown-code-block-banner: #1f1e1da8;
+  --dsw-alias-markdown-code-block: #1f1e1da8;
+  --dsw-alias-markdown-code-segment-selected: #3a3833bf;
+  --dsw-alias-markdown-code-segment-unselected: #26262499;
+  --dsw-alias-markdown-inline-code: #30302e9e;
+  --dsw-alias-markdown-placeholder: #26262499;
+  --dsw-alias-markdown-tag: #30302e9e;
+  --dsw-alias-scrollbar-bg-l1: #3e3c38;
+  --dsw-alias-scrollbar-bg-l2: #3e3c38;
+  --dsw-alias-scrollbar-hover-l1: #5e5c54;
+  --dsw-alias-scrollbar-hover-l2: #5e5c54;
+  --dsw-alias-state-business-primary: #e08b64;
+  --dsw-alias-state-business-tertiary: #3a352e;
+  --dsw-alias-state-error-primary: #d16a5f;
+  --dsw-alias-state-error-secondary: #dd7f74;
+  --dsw-alias-state-success-primary: #8ba06b;
+  --dsw-alias-state-success-secondary: #8ba06b;
+  --dsw-alias-state-success-tertiary: #2b3222;
+  --dsw-alias-state-warn-label: #d29a4a;
+  --dsw-alias-state-warn-primary: #d29a4a;
+  --dsw-alias-state-warn-secondary: #d29a4a;
+  --dsw-alias-state-warn-tertiary: #3f3218;
+  --dsw-alias-toast-bg: #453e34;
+  --dsw-alias-tooltip-bg: #fdf9e3;
+  --dsw-alias-tooltip-fg: #29261b;
+  --dsw-specific-bubble-highlight: #453e34;
+  --dsw-specific-bubble: #3a352e;
+  --dsw-specific-input-major: #30302e;
+  --dsw-specific-login-input: #30302e;
+  --dsw-specific-menu: #1f1e1df0;
+  --dsw-specific-selector: #30302ed9;
+  --dsw-specific-sidebar-fill: #1f1e1d;
+  --dsw-specific-sidebar-nav-item-active-accent: #e08b64;
+  --dsw-specific-sidebar-nav-item-active: #3a352e;
+  --dsw-specific-sidebar-nav-item-hover: #30302e;
+  --dsw-specific-tip: #262624;
+}
+
+/* ── 3. 滚动条 / 选区 / 焦点（Claude 式克制） ───────────────── */
+
+:root {
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+body::-webkit-scrollbar { width: 10px; height: 10px; }
+body::-webkit-scrollbar-track { background: #faf9f5; }
+body::-webkit-scrollbar-thumb {
+  background: #ddd9cc;
+  border: 2px solid #faf9f5;
+  border-radius: 5px;
+}
+body::-webkit-scrollbar-thumb:hover { background: #c9c4b4; }
+body::-webkit-scrollbar-corner { background: #faf9f5; }
+
+body[data-ds-dark-theme]::-webkit-scrollbar-track,
+body[data-ds-dark-theme]::-webkit-scrollbar-corner { background: #262624; }
+body[data-ds-dark-theme]::-webkit-scrollbar-thumb {
+  background: #3e3c38;
+  border-color: #262624;
+}
+body[data-ds-dark-theme]::-webkit-scrollbar-thumb:hover { background: #5e5c54; }
+
+body::selection { color: #fff; background: #d97757; }
+body[data-ds-dark-theme]::selection { color: #fff; background: #c15f3c; }
+
+body[data-ds-dark-theme] :focus-visible {
+  outline-color: var(--dsw-alias-state-business-primary);
+}
+
+/* ── 4. 社区组件面（aion kit，随皮肤着色） ──────────────────── */
+
+:root {
+  --aion-bg-base: #fffc;
+  --aion-bg-1: #faf9f580;
+  --aion-bg-2: #f5f4ee9e;
+  --aion-bg-3: #d9775738;
+  --aion-bg-4: #d9775757;
+  --aion-bg-hover: #d9775714;
+  --aion-bg-active: #d9775724;
+  --aion-text-primary: #29261b;
+  --aion-text-secondary: #56554c;
+  --aion-text-tertiary: #6e6c60;
+  --aion-text-disabled: #a3a099;
+  --aion-primary: #d97757;
+  --aion-success: #788c5d;
+  --aion-warning: #bc791e;
+  --aion-danger: #bf4d43;
+  --aion-brand: #e89575;
+  --aion-aou-1: #faf6f0;
+  --aion-aou-2: #f5e5dc;
+  --aion-aou-3: #efd9cd;
+  --aion-aou-4: #e89575;
+  --aion-aou-5: #d97757;
+  --aion-aou-6: #c15f3c;
+  --aion-fill-2: #d977570f;
+  --aion-fill-3: #d9775724;
+  --aion-border-base: #29261b24;
+  --aion-overlay-shadow: 0 8px 24px #29261b2e;
+  --aion-font-sans: -apple-system, "system-ui", "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --aion-font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+body[data-ds-dark-theme] {
+  --aion-bg-base: #262624d1;
+  --aion-bg-1: #1f1e1d80;
+  --aion-bg-2: #30302e99;
+  --aion-bg-3: #e8957533;
+  --aion-bg-4: #e895754d;
+  --aion-bg-hover: #e895751f;
+  --aion-bg-active: #e8957533;
+  --aion-text-primary: #f5f4ee;
+  --aion-text-secondary: #c2c0b6;
+  --aion-text-tertiary: #98968a;
+  --aion-text-disabled: #6e6c60;
+  --aion-primary: #e08b64;
+  --aion-success: #8ba06b;
+  --aion-warning: #d29a4a;
+  --aion-danger: #d16a5f;
+  --aion-brand: #e89575;
+  --aion-aou-1: #30302e;
+  --aion-aou-2: #3a352e;
+  --aion-aou-3: #453e34;
+  --aion-aou-4: #d97757;
+  --aion-aou-5: #e89575;
+  --aion-aou-6: #f0b294;
+  --aion-fill-2: #e895751f;
+  --aion-fill-3: #e8957533;
+  --aion-border-base: #f0eee626;
+  --aion-overlay-shadow: 0 12px 32px #00000080;
+}
+
+/* ── 5. L2 语义层 · 侧栏节奏与轻修饰 ───────────────────────── */
+
+/* 对话框：暖色细边 */
+[data-dsh-part="dialog"] { border-color: var(--dsw-alias-border-l3); }
+body[data-ds-dark-theme] [data-dsh-part="dialog"] { border-color: var(--dsw-alias-border-l2); }
+
+/* 侧栏「新会话」按钮：Claude 式圆角主按钮观感 */
+[data-dsh-part="new-session"] { border-radius: 10px; }
+
+/* 侧栏内输入框（含搜索）：描边圆角输入样式 */
+[data-slot="sidebar"] input[type="search"],
+[data-slot="sidebar"] input[type="text"] {
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+}
+[data-slot="sidebar"] input[type="search"]:focus,
+[data-slot="sidebar"] input[type="text"]:focus {
+  border-color: var(--dsw-alias-button-primary-fill);
+  outline: none;
+}
+
+/* macOS 专属：官方给侧栏叠了蓝紫极光渐变（#7a9bf0/#8f89b8 硬编码），
+ * 与暖米主题冲突——官方模块样式后插入、同特异性会赢，这里加权重强杀。 */
+[data-platform="darwin"] [class*="sidebarCol"] {
+  background: var(--dsw-specific-sidebar-fill) !important;
+}
+
+/* 会话/工作区行：圆角卡片化（data-row-key 为官方稳定属性） */
+[class*="sessionRow"],
+[class*="projectRow"] { border-radius: 8px; }
+
+/* 侧栏搜索按钮：同节奏圆角 */
+[class*="searchButton"] { border-radius: 8px; }
+
+/* ── 6. 侧栏紧凑化（实测原尺寸后收紧，Claude 式密度） ────────── */
+
+/* 品牌行：60px → ~46px */
+[data-slot="sidebar"] [class*="logoRow"] {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+}
+
+/* 新会话按钮：38px → ~30px */
+[data-slot="sidebar"] [class*="newSession"] {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+}
+
+/* 插件区行：36px → ~28px */
+[data-slot="sidebar"] [class*="panelRow"] {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+[data-slot="sidebar"] nav[class*="panelList"] { margin-bottom: 4px; }
+
+/* 会话行：更紧的行高与字号 */
+[data-slot="sidebar"] [data-row-key] {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* 会话区滚动口上部留白收紧 */
+[data-slot="sidebar"] [class*="listArea"] { padding-top: 2px; }
+
+/* ── 7. 布局：顶部/底部压成细条，中间会话区最大化 ───────────── */
+
+/* 品牌行：压成细条（按钮本体也收紧） */
+[data-slot="sidebar"] [class*="logoRow"] {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  margin-bottom: 0 !important;
+}
+[data-slot="sidebar"] [class*="logoRow"] [class*="brand"] {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* 新会话：原版形态——左侧小功能行（无卡片框、左对齐、隐藏快捷键标）
+ * v1.1：与「功能」「会话」统一为第一级规格（12px/600/次要色）
+ * v1.2：宿主是 button→LabelMask→Content 三层同构包装，每层被
+ *   [class*="newSession"] 命中后各叠 padding 8px + margin 2px，
+ *   叠出 ~30px 假缩进（用户反馈"没左对齐"的根因）。内两层归零规则
+ *   必须放在主规则之后（同特异性靠源顺序取胜），图标起点才与
+ *   「功能」「会话」同列。 */
+[data-slot="sidebar"] [class*="newSession"] {
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+  margin: 0 2px 2px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  justify-content: flex-start !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--dsw-alias-label-secondary, #70686a) !important;
+}
+[data-slot="sidebar"] [class*="newSessionLabelMask"],
+[data-slot="sidebar"] [class*="newSessionContent"] {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+[data-slot="sidebar"] [class*="newSession"]:hover {
+  background: var(--dsw-alias-interactive-bg-hover, #0000000a) !important;
+  color: var(--dsw-alias-label-primary, #29261b) !important;
+}
+[data-slot="sidebar"] [class*="newSessionShortcut"] { display: none !important; }
+
+/* 底部账号区：压缩 */
+[data-slot="sidebar"] [class*="footArea"] { padding-bottom: 2px; }
+[data-slot="sidebar"] [class*="footerActions"] { padding-top: 2px; padding-bottom: 2px; }
+
+/* 隐藏用量速览卡（功能在 设置 → Web 扩展 → 使用统计 里，想要回来删掉这行） */
+[data-dsh-usage-foot-card] { display: none; }
+
+/* 隐藏左下角 Remote 入口（功能在头像菜单「DeepSeek Remote」项，想要回来删掉这行） */
+[data-slot="sidebar"] [data-dsh-plugin="remote-web-ui"] { display: none; }
+
+/* ── 8. 侧栏复刻（度量移植自原版 dsh-claude-style，MIT，见 BUGS/README） ── */
+
+/* 会话/工作区行：13px/18px 次要色（Claude 密度），24px 行高，6px 圆角 */
+[data-slot="sidebar"] [data-row-key] {
+  height: 24px;
+  min-height: 24px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary, #70686a);
+  border-radius: 6px;
+}
+[data-slot="sidebar"] [data-row-key]:hover { color: var(--dsw-alias-label-primary, #29261b); }
+[data-slot="sidebar"] [data-row-key][class*="selected"] { color: var(--dsw-alias-label-primary, #29261b); }
+
+/* 新会话按钮：保留宿主默认高度（B7），只收紧下间距 */
+[data-slot="sidebar"] [class*="newSession"] { margin-bottom: 6px; }
+
+/* 插件区行：与会话区完全同规格（v0.9 —— !important 钉死，含「更多」锚点行；
+ * 宿主原生 7px padding + 22px 行高 = 36px，必须连 padding 一起压） */
+[data-slot="sidebar"] [class*="panelRow"],
+[data-slot="sidebar"] [class*="moreAnchor"] > *,
+[data-slot="sidebar"] [class*="moreAnchor"] button {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 8px !important;
+  margin: 0 2px !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  color: var(--dsw-alias-label-secondary, #70686a) !important;
+  background: transparent !important;
+  border: none !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  border-radius: 6px !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+[data-slot="sidebar"] [class*="panelRow"]:hover,
+[data-slot="sidebar"] [class*="moreAnchor"] button:hover {
+  color: var(--dsw-alias-label-primary, #29261b) !important;
+  background: var(--dsw-alias-interactive-bg-hover, #0000000a) !important;
+}
+
+/* 会话区标签：12px/16px */
+[data-slot="sidebar"] [class*="regionArea"] { font-size: 12px; }
+
+/* 会话列/对话画布：原版的细边与画布 */
+[data-pane="sidebar"] { border-right: .5px solid var(--dsw-alias-border-l1); }
+[data-pane="conversation"] { background: var(--dsw-alias-bg-layer-1); }

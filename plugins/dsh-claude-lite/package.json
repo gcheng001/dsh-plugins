@@ -1,0 +1,43 @@
+{
+  "name": "dsh-claude-lite",
+  "description": "轻妆 Claude Lite — a lightweight homage to dsh-claude-style: pure-CSS skin + sidebar upgrades + model-row brand marks + session title curator for DeepSeek Harness.",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "main": "lib/host/index.js",
+  "exports": {
+    ".": "./lib/host/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "skins",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.1.7"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "claude-style",
+    "skin",
+    "sidebar",
+    "session-title",
+    "productivity"
+  ],
+  "author": "摩尚 (Moshang)",
+  "license": "MIT"
+}
