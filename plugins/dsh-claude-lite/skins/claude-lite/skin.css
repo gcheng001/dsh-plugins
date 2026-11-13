@@ -1,4 +1,9 @@
-/* 轻妆 · Claude Lite（claude-lite）v1.2
+/* 轻妆 · Claude Lite（claude-lite）v1.2.1
+ * v1.2.1：修复 tooltip 字色不可读——宿主文字令牌是 --dsw-alias-tooltip-label
+ *   （组件 CSS: color:var(--dsw-alias-tooltip-label)），旧版误写为
+ *   --dsw-alias-tooltip-fg（宿主 0 消费），字色回落到宿主默认近白色，
+ *   白字压淡黄底（#fdf9e3）导致看不清。另删除宿主词表中不存在的
+ *   --dsw-specific-sidebar-nav-item-hover 死定义（宿主只有 -active 系）。
  * 纯 CSS 资产皮肤：仅重映射官方 --dsw-* 设计令牌 + 轻度语义层修饰。
  * 性能预算：零网络字体、零图片、零 JS、单文件 ≤40KB。
  * 亮色锚 :root，暗色锚 body[data-ds-dark-theme]；选择器由皮肤中心统一
@@ -132,7 +137,7 @@ html body {
   --dsw-alias-state-warn-tertiary: #f5ead6;
   --dsw-alias-toast-bg: #c15f3c;
   --dsw-alias-tooltip-bg: #fdf9e3;
-  --dsw-alias-tooltip-fg: #29261b;
+  --dsw-alias-tooltip-label: #29261b;
   --dsw-specific-bubble-highlight: #efd9cd;
   --dsw-specific-bubble: #f5e5dc;
   --dsw-specific-input-major: #ffffff;
@@ -142,7 +147,6 @@ html body {
   --dsw-specific-sidebar-fill: #f0eee6;
   --dsw-specific-sidebar-nav-item-active-accent: #e89575;
   --dsw-specific-sidebar-nav-item-active: #f5e5dc;
-  --dsw-specific-sidebar-nav-item-hover: #eae7db;
   --dsw-specific-tip: #faf9f5;
 }
 
@@ -224,7 +228,7 @@ body[data-ds-dark-theme] {
   --dsw-alias-state-warn-tertiary: #3f3218;
   --dsw-alias-toast-bg: #453e34;
   --dsw-alias-tooltip-bg: #fdf9e3;
-  --dsw-alias-tooltip-fg: #29261b;
+  --dsw-alias-tooltip-label: #29261b;
   --dsw-specific-bubble-highlight: #453e34;
   --dsw-specific-bubble: #3a352e;
   --dsw-specific-input-major: #30302e;
@@ -234,7 +238,6 @@ body[data-ds-dark-theme] {
   --dsw-specific-sidebar-fill: #1f1e1d;
   --dsw-specific-sidebar-nav-item-active-accent: #e08b64;
   --dsw-specific-sidebar-nav-item-active: #3a352e;
-  --dsw-specific-sidebar-nav-item-hover: #30302e;
   --dsw-specific-tip: #262624;
 }
 

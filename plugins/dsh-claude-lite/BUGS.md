@@ -105,3 +105,24 @@
 
 ### 运维
 只动 client.js → ⌘R 生效。备份 `client.js.bak-20261113`。皮肤升级会覆盖补丁，是否转 `cordis.patch.yml` 正式覆盖或反馈上游待定。
+
+## B34 · B33 修复被 pnpm install 冲掉（复发根因：改错了副本）（2026-11-13，已修）
+
+- **现象**：B33 修复上线后，用户在插件市场装插件，侧栏「功能」又塌回单字、模型名定格问题回归。
+- **真根因**：本机存在**三份** dsh-claude-lite 副本，我上轮只改了其中两份：
+  1. **源（profile 真正依赖的那份）** = `workbench/dsh-claude-lite` —— profile `package.json` 写的是 `"dsh-claude-lite": "file:/.../workbench/dsh-claude-lite"`，`pnpm-lock.yaml` 里也是 `directory` 类型。**任何一次 `pnpm install`（在插件市场装任何插件都会触发）都会从这里重新拷贝到 node_modules**。这份从未被改 → 一 install 就回退到 1.0.2 原件。
+  2. monorepo 副本 = `workbench/dsh-plugins/plugins/dsh-claude-lite`（发布用，推 GitHub；上轮改的是这份）
+  3. 部署位 = `~/.dsh/profiles/desktop/node_modules/dsh-claude-lite`（跑起来的那份；上轮也改的是这份，但会被 (1) 覆盖）
+- **证据链**：15:43 包目录重装、`client.js` mtime 回到 Nov 9 17:24（npm 原件时间）、MD5 回到 `b9c68d…`；15:48 又在装 hono/@modelcontextprotocol —— 市场装插件触发依赖树重排。
+- **修法**：以 monorepo 为权威 `rsync -a` 同步到源目录，三份 MD5 统一为 `110ec7ef…`（67521 bytes）、`diff -rq` 无差异。
+- **硬规则（防复发）**：改 dsh-claude-lite 代码**必须先改源目录 `workbench/dsh-claude-lite`**，再同步 monorepo（发布）+ 部署位（即时生效）。只改后两处 = 一次 install 就白做。验收前先 `md5` 三处比对。
+- **残留风险**：若插件市场将来把依赖声明改回 registry 版本（而非 `file:` 本地目录），install 仍会拉线上包覆盖；那时需把修复发布到 npm 才能根治。
+
+## B35 · Tooltip 文字不可读（令牌名写错，宿主 0 消费）（2026-11-13，已修）
+
+- **现象**：用户截图：模型设置说明与「将这条回复存入记忆」两处提示（tooltip）文字奶白压淡黄底，几乎看不清。
+- **第一性原理归因链**：拆宿主 app.asar，tooltip 组件 CSS 为 `background:var(--dsw-alias-tooltip-bg);color:var(--dsw-alias-tooltip-label)`；皮肤只改对了 bg 令牌，字色却写成 `--dsw-alias-tooltip-fg` —— **该名在宿主全文 0 次出现**（文字令牌统一 `-label` 后缀，同族 toast-label / hovercard-label-*），字色回落宿主默认 `static-neutral-bluish-00`（纯白，为暗底设计）→ 白字压淡黄底 #fdf9e3 不可读。
+- **排雷法（可复用）**：把皮肤定义的每个令牌名到宿主 asar 全文反查，0 命中即孤儿令牌。本次另揪出死定义 `--dsw-specific-sidebar-nav-item-hover`（宿主只有 `-active` 系）一并删除。`tooltip-key-bg` 无需皮肤定义——宿主 `color-mix(tooltip-bg, white 18%)` 自动派生。
+- **修法**：skin.css v1.2.1：亮/暗两块 `tooltip-fg` → `tooltip-label: #29261b`（对比度 14.3:1，AAA）；删 nav-item-hover 死定义。
+- **B34 硬规则首次正面执行**：本次先在部署位+运行位修好后，补同步源目录 + monorepo，四处 skin.css MD5 统一 `0674ec…`。教训补充：B34 说「先改源」，但排查类修复天然先在生效位验证——**验证通过后必须回补源目录，才算闭环**。
+- **运维**：皮肤 CSS 改动需完全重启应用生效（⌘R 不可靠，B10 多次应验）。备份：四处同目录 `skin.css.bak-20261113`。
