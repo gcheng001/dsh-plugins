@@ -1,6 +1,6 @@
 # BUGS · dsh-claude-lite（轻妆）
 
-继承自更名前的 dsh-moshang-lite 时代（B1–B14 属早期开发记录，未随本仓库发布），本文件记录 v1.0.0 合并/更名/新功能轮的新增条目。
+继承 dsh-moshang-lite 时代的 B1–B14（见 git 历史与需求文档），本文件记录 v1.0.0 合并/更名/新功能轮的新增条目。
 来源：codex exec 异源审查第一轮（0 P0 / 2 P1 / 9 P2，全部已修）+ 自测。
 
 ## B15 · 桥接赋值在真实 Cordis 上抛 "cannot set property in multiple fibers"（P1）
@@ -67,3 +67,41 @@
 ## B29 · POST null 未捕获异常（第七轮 P1，已修）
 - CAS 判断 `payload.revision` 在 payload=null（合法 JSON 非对象）时抛 TypeError，可从 end 回调逸出。修：解析后先校验「非空 JSON 对象」，否则 400。回归：null/数组/数字/字符串全 400，正常路径不变。
 - **终审结论（第八轮）：PASS 可上架。** 七轮异源审查累计 16 项全修。
+
+## B30 · Remote 0.6.4 后入口「藏不住」——误诊链与真根因（2026-11-09，已修）
+- **现象**：remote 升 0.6.4 后侧栏底部 Remote 行可见。**真根因不在 remote**：0.6.3→0.6.4 的 dist 逐文件 diff（client.js/workspaces.js/shell.js/settings.js）显示入口组件与 `slots.inject("sidebar.footer.action")` 接线逐字节一致；npm 上 0.6.4 就是 latest（无更新角标）；locale 里 remoteEntry 两版都是 "Remote"。行可见是当日 16:48 一个临时补丁**故意取消隐藏**所致。
+- **误诊**：该补丁声称「隐藏后代理点击失效」并据此放弃隐藏。实测证伪（jsdom+React18 最小复现 + 沙箱活体 DOM 双验）：display:none 子树内 `.click()` 照样触发 React 委托 onClick——委托挂在根节点，不看可见性。真因是**旧代码用「整行 textContent === "Remote"」精确匹配**：入口带更新角标（hasUpdate 时按钮内有 updateSuffix 文本）或切到「紧凑」模式（行被 portal 进账户行，不在 footerActions）时找不到行→隐藏漏、点击静默失效，被误读成「藏了点不动」。
+- **修法（v1.0.1，用户拍板「移到功能里面去」）**：①applyFooterState/undoFooterState 改按类名 `.dshRemoteSidebarEntry` 查找（querySelectorAll 任意深度，免疫文案/角标漂移）；②新增 ensureRemotePanelRow：宿主 `nav[class*="panelList"]`（功能区）末尾插 claude-lite 自有镜像行（随功能区折叠自动显隐），点击经 findRemoteTrigger 代理触发真实入口；③findRemoteTrigger 类名优先 + aria-label/title 精确兜底（排除 menu 内与会话行误伤）；④头像菜单 DeepSeek Remote 项共用同一查找器；⑤dispose 拆镜像行。
+- **验证**：node --check 过；沙箱 E2E（真实宿主+1.0.1）：带「 · 更新」附加文本的仿真入口被隐藏（旧匹配会漏）、镜像行入 nav、点击代理 `__fakeRemoteClicks=1`、折叠联动显隐正确；遗留：compact 模式兜底分支未实弹（本地无该配置）。
+- **运维**：只动 client.js → ⌘R 生效。发布时需同步 workbench/dsh-plugins monorepo 副本（仍在 1.0.0）再 commit+push。
+
+## B31 · 用户桌面验收两连（2026-11-09 晚，v1.0.2，已修）
+- **①二维码图标没藏**：实锤为 `@linxin666/dsh-remote-bridge`（web-all 全家桶，桌面有装、沙箱 rea-test 没装所以首轮没复现）的「配对 iPhone」入口——注册在与 ds-harness-remote 同一个官方 `sidebar.footer.action` slot，特征 `button[data-dsh-plugin="remote-bridge"][data-dsh-part="entry"]`，纯 QrIcon 无文字，任何文本匹配都够不着。修：FOOTER_QR_SEL 纳入 applyFooterState/undoFooterState。
+- **②功能区镜像行加粗不协调**：v1.0.1 固定 12px/600（功能/会话一级规格），但宿主 panelRow 邻居是另一套（实测 14px/400/label-primary/36px）。修：syncRemoteRowStyle 动态抄第一个 `[class*="panelRow"]` 邻居的 fontSize/fontWeight/lineHeight/color/padding/height/gap/borderRadius（按节点引用缓存，宿主重渲染自动重抄），并补 remote 自家显示器 SVG（rect+支架，16px）与兄弟行图标对齐。
+- **验证（沙箱含真 remote 0.6.4）**：真入口 hidden、仿真 QR 钮 hidden、镜像行计算样式与邻居逐项相等（14px=14px/400=400/同色/36px=36px）、点镜像行**实弹打开真面板**（.dshRemoteBackdrop + "DS Harness Remote - 远程工作台"）、backdrop 点击关闭正常。
+- 已知残留：compact 模式下真实入口在账户行不在 footerActions（藏不到，与 v1.0.0 行为一致）；remote-bridge 的「配对 iPhone」功能隐藏后无替代入口（用户未要求镜像；需要时加进功能区即可）。
+
+## B33 · 换模后模型名定格 + 功能区「功能」塌成单字（2026-11-13，v1.0.3，已修）
+
+来源：用户桌面两 bug handoff + 第一性原理校验（活体 AX + 像素 + 宿主源码复验）。
+
+### ① 选了新模型，胶囊仍显示旧模型名
+- **机制**：词标装饰用 `tn.parentNode.replaceChild(frag, tn)` 替换了宿主 React 创建并持有的文本节点。之后 React 换模把新名字写进**已脱离文档**的旧节点，屏幕无变化；菜单是 `{open && createPortal}` 每次新挂载，所以菜单显示真实值 ⇒ 典型的「一处冻结一处正确」。
+- **帮凶**：`restoreOwnNodes` 撤妆时无条件回插品牌词（`insertBefore(createTextNode(seg + sep))`），把旧名主动写回屏幕。
+- **修法（A2：只插不换）**：词标 `insertBefore` 前插，原文本节点**原地截短** `tn.nodeValue = head + tail` 并记 `dataset.tail`。React 始终能写值，换模即时反映。撤妆先查 `mark.nextSibling` 是否仍是截短的 tail → 原地补回 `nodeValue = seg + sep + tail`；兜底分支回插前校验 `host.getAttribute("data-model-id") === mark.dataset.mid`（模型已换就不许回插，防「旧品牌词 + 新名尾巴」缝合怪）。
+- **影响面**：任何品牌裸 id 互切（`glm-*`→`gpt-*` 等）原本会走 prepend 分支产生错拼，现一并消除。
+
+### ② 侧栏「功能」按钮塌成 16px、只露一个字
+- **误诊记录**：第一轮按 handoff 判断为「宿主 flex 挤压」→ 补 `flex:0 0 auto; min-height:24px; overflow:hidden`。活体 AX 实测按钮 8→24 高、padding 生效、**宽度仍锁死 16px**。这是关键信号：规则匹配正常，宽度来源不在按钮自己身上。
+- **真根因**：宿主 `.scrollArea` 是 **`display:grid`**（`grid-template-columns: 4px minmax(0,1fr) calc(inline-padding - 2px)`，SidebarRoot.module.css:550），`nav.panelList` 显式 `grid-column: 2`。皮肤用 `nav.parentElement.insertBefore()` 把按钮插进 grid → 自动放置进 **4px 装饰列**；`flex` 属性对 grid 子项**完全无效**，宽度由轨道决定 ⇒ 锁死。
+- **修法**：插入位置改为 `nav.closest('[class*="scrollRegion"]')`（`display:flex; flex-direction:column`）的 firstChild（回落 `parentElement`）；CSS 保留 flex 防御并补 `grid-column:1/-1; justify-self:stretch` 作 grid 兜底。附带收益：按钮在滚动区外，会话列表滚动时常驻。
+- **活体验证**：AX 实测按钮 260×26、文字「功能」24×14 完整、`▸` 贴右（x=482）、与「会话」无重叠；像素图确认。
+
+### 通用教训（已同步需求文档 §四 11–14）
+- 注入自绘控件前先确认父容器布局模型（block/flex/grid），grid 内 flex 属性无效。
+- 「CSS 部分生效」= 宽度/尺寸来源在父容器，不要继续加 `!important`。
+- 禁止 replaceChild React 管理的文本节点；装饰只准「改属性 / 前插 / 原地 nodeValue」。
+- AX `children=0` 不可信、`aria` 永远真实（aria vs 像素对照）；AX 框相切 ≠ 像素重叠。
+
+### 运维
+只动 client.js → ⌘R 生效。备份 `client.js.bak-20261113`。皮肤升级会覆盖补丁，是否转 `cordis.patch.yml` 正式覆盖或反馈上游待定。

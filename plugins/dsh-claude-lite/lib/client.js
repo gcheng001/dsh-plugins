@@ -11,8 +11,11 @@
  *     survives host re-renders (session-scoped) (B1).
  *  3. Panel-area collapse — the 插件/自动化任务/更多 block folds behind one
  *     slim toggle; persisted in localStorage.
- *  4. Footer declutter — the "Remote" footer entry is hidden (its settings
- *     page stays reachable in 设置) (B3).
+ *  4. Footer declutter — the "Remote" footer entry is hidden; a mirror row
+ *     inside the 功能 panel opens the same dialog (proxy click on the hidden
+ *     React button — delegated events ignore visibility, verified). The
+ *     matcher is class-based (.dshRemoteSidebarEntry), immune to label and
+ *     badge drift (B3, B30).
  *  5. Brand row — star mark + custom name, right-click to edit (name: free
  *     text; icon: emoji / builtin name / local image path via host route);
  *     persisted in localStorage. Default name: "Claude".
@@ -50,6 +53,8 @@ window.__ModuleLoader__.load({
     var BODY_FLAG = "data-claude-lite-date-groups";
     /* 1.0.0 更名迁移：旧键只读一次，读到即搬走（品牌自定义/折叠状态不丢） */
     var PANEL_KEY = "dsh.claude-lite.panels"; /* "1" = collapsed; absent = collapsed (default) */
+    /* web-all 全家桶 remote-bridge「配对 iPhone」footer QR 触发钮（B31，纯图标无文字） */
+    var FOOTER_QR_SEL = '[data-dsh-plugin="remote-bridge"][data-dsh-part="entry"]';
     var BRAND_KEY = "dsh.claude-lite.brand"; /* JSON {text, icon}; icon = ""(default star) | builtin name | emoji | /abs/path */
     var LEGACY_PANEL_KEY = "dsh.moshang-lite.panels";
     var LEGACY_BRAND_KEY = "dsh.moshang-lite.brand";
@@ -101,14 +106,27 @@ window.__ModuleLoader__.load({
       "[" + ATTR + '~="row-hidden"] { display: none !important; }',
       /* panel-area collapse */
       "[" + ATTR + '~="panel-toggle"] {',
+      "  display: flex; align-items: center; gap: 6px; box-sizing: border-box;",
+      "  flex: 0 0 auto; align-self: stretch;",
+      "  grid-column: 1 / -1; justify-self: stretch;",
+      "  width: auto; min-width: 0; min-height: 24px;",
+      "  margin: 0 2px 2px; padding: 4px 8px; border: 0; background: transparent;",
+      "  font-size: 12px; line-height: 18px; font-weight: 600; text-align: left; cursor: pointer;",
+      "  color: var(--dsw-alias-label-secondary, #70686a); border-radius: 8px;",
+      "  overflow: hidden; white-space: nowrap;",
+      "}",
+      "[" + ATTR + '~="panel-toggle"]:hover { background: var(--dsw-alias-interactive-bg-hover, #ffffff0d); }',
+      "[" + ATTR + '~="panel-toggle"]::after { content: "▾"; margin-left: auto; font-size: 9px; opacity: .7; }',
+      "[" + ATTR + '~="panel-toggle"][data-claude-lite~="collapsed"]::after { content: "▸"; }',
+      /* Remote mirror row inside the 功能 panel (B30) — same hierarchy level as
+         the toggle itself (一级：12px/600/secondary) */
+      "[" + ATTR + '~="remote-row"] {',
       "  display: flex; align-items: center; gap: 6px; width: calc(100% - 4px);",
       "  margin: 0 2px 2px; padding: 4px 8px; border: 0; background: transparent;",
       "  font-size: 12px; line-height: 18px; font-weight: 600; text-align: left; cursor: pointer;",
       "  color: var(--dsw-alias-label-secondary, #70686a); border-radius: 8px;",
       "}",
-      "[" + ATTR + '~="panel-toggle"]:hover { background: var(--dsw-alias-interactive-bg-hover, #ffffff0d); }',
-      "[" + ATTR + '~="panel-toggle"]::after { content: "▾"; margin-left: auto; font-size: 9px; opacity: .7; }',
-      "[" + ATTR + '~="panel-toggle"][data-claude-lite~="collapsed"]::after { content: "▸"; }',
+      "[" + ATTR + '~="remote-row"]:hover { background: var(--dsw-alias-interactive-bg-hover, #ffffff0d); }',
       /* avatar-menu injected items (B8) */
       "[" + ATTR + '~="menu-item"] {',
       "  display: flex; align-items: center; gap: 10px; width: 100%;",
@@ -558,7 +576,14 @@ window.__ModuleLoader__.load({
       btn.type = "button";
       btn.setAttribute(ATTR, "panel-toggle");
       /* click handled by the body-level delegate — no direct listener here */
-      nav.parentElement.insertBefore(btn, nav);
+      /* 插入位置（B33 实测）：宿主 nav.panelList 的父容器 .scrollArea 是
+       * display:grid（列 4px / 1fr / padding），panelList 显式占 grid-column:2。
+       * 按旧法插进 grid 会被自动放进 4px 装饰列，flex 属性对 grid 子项无效，
+       * 按钮宽度锁死在 16px（「功能」被裁成一个字）。上溯到 flex column 的
+       * .scrollRegion 插入，按钮才是天然整宽的 flex item。 */
+      var region = nav.closest('[class*="scrollRegion"]');
+      if (region !== null) region.insertBefore(btn, region.firstChild);
+      else nav.parentElement.insertBefore(btn, nav);
       applyPanelState();
     }
 
@@ -585,23 +610,109 @@ window.__ModuleLoader__.load({
       walk(ra, 0);
     }
 
-    /* ── footer declutter (B3) ───────────────────────────────────── */
+    /* ── footer declutter (B3, B30) ────────────────────────────────
+     * B30：Remote 0.6.x 的入口走宿主官方 sidebar.footer.action slot，行内
+     * 可能带更新角标/退出链接等附加文本，旧的「整行文本 === Remote」精确
+     * 匹配会漏。改按插件自己的类名 .dshRemoteSidebarEntry 找，天然免疫文
+     * 案漂移；隐藏仍是行级 display:none（React 托管的行，内联样式不参与
+     * 其调和，B3 数周验证）。 */
 
     function applyFooterState() {
       var fa = document.querySelector('[data-slot="sidebar"] [class*="footerActions"]');
       if (fa === null) return;
-      for (var i = 0; i < fa.children.length; i++) {
-        var row = fa.children[i];
-        if ((row.textContent || "").trim() === "Remote") row.style.display = "none";
-      }
+      var rows = fa.querySelectorAll(".dshRemoteSidebarEntry");
+      for (var i = 0; i < rows.length; i++) rows[i].style.display = "none";
+      /* B31：web-all 的 remote-bridge「配对 iPhone」QR 触发钮（同 slot、纯图标
+         无文字，文本匹配永远够不着），一并纳入 footer 清理 */
+      var qr = fa.querySelectorAll(FOOTER_QR_SEL);
+      for (var j = 0; j < qr.length; j++) qr[j].style.display = "none";
     }
     function undoFooterState() {
       var fa = document.querySelector('[data-slot="sidebar"] [class*="footerActions"]');
       if (fa === null) return;
-      for (var i = 0; i < fa.children.length; i++) {
-        var row = fa.children[i];
-        if ((row.textContent || "").trim() === "Remote") row.style.display = "";
+      var rows = fa.querySelectorAll(".dshRemoteSidebarEntry");
+      for (var i = 0; i < rows.length; i++) rows[i].style.display = "";
+      var qr = fa.querySelectorAll(FOOTER_QR_SEL);
+      for (var j = 0; j < qr.length; j++) qr[j].style.display = "";
+    }
+    /* 代理点击的统一入口：找真实入口按钮。已实测（jsdom+React18）：按钮
+     * 处于 display:none 子树时 .click() 照样触发 onClick（React 事件委托
+     * 挂根节点、不看可见性）——2026-11-09 曾据「藏了点不动」取消隐藏，属
+     * 误诊，真因是当时的精确文本匹配在角标/紧凑模式下找不到行。 */
+    function findRemoteTrigger() {
+      var btn = document.querySelector('[data-slot="sidebar"] .dshRemoteSidebarEntry button');
+      if (btn !== null) return btn;
+      /* 兜底：入口被设为「紧凑」时行被 portal 进账户行，不在 footerActions；
+         按 aria-label/title 精确认领，避免误点标题含 Remote 的会话行 */
+      var cand = document.querySelectorAll('[data-slot="sidebar"] button, [data-slot="sidebar"] [role="button"]');
+      for (var i = 0; i < cand.length; i++) {
+        var n = cand[i];
+        if (n.closest('[role="menu"]') !== null) continue;
+        if (n.closest(".dshRemoteSidebarEntry") !== null) continue;
+        var label = ((n.getAttribute("aria-label") || "") + " " + (n.getAttribute("title") || "")).trim().toLowerCase();
+        if (label === "remote" || label === "deepseek remote") return n;
       }
+      return null;
+    }
+    /* 功能区镜像行（B30，用户拍板「移到功能里面去」）：claude-lite 自有节
+     * 点，跟 panel-toggle 同款模式，随功能区折叠自动显隐；点击代理触发真
+     * 实入口（见 findRemoteTrigger 注释）。B31：字体规格改为动态跟随宿主
+     * panelRow 邻居（v1.0.1 固定 12px/600 与邻居不一致，用户指正），并补
+     * remote 自家的显示器图标与兄弟行对齐。 */
+    function syncRemoteRowStyle(row, nav) {
+      var src = nav.querySelector('[class*="panelRow"]');
+      if (src === null) return;
+      if (row.__claudeLiteStyleSrc === src) return; /* 同一邻居且宿主未重渲染，不重复抄 */
+      var cs = window.getComputedStyle(src);
+      row.style.fontSize = cs.fontSize;
+      row.style.fontWeight = cs.fontWeight;
+      row.style.lineHeight = cs.lineHeight;
+      row.style.color = cs.color;
+      row.style.padding = cs.padding;
+      row.style.height = cs.height;
+      row.style.gap = cs.gap;
+      row.style.borderRadius = cs.borderRadius;
+      row.__claudeLiteStyleSrc = src;
+    }
+    function ensureRemotePanelRow() {
+      var sb = document.querySelector('[data-slot="sidebar"]');
+      if (sb === null) return;
+      var nav = sb.querySelector('nav[class*="panelList"]');
+      if (nav === null) return;
+      var row = nav.querySelector("[" + ATTR + '~="remote-row"]');
+      if (row === null) {
+        var SVGNS = "http://www.w3.org/2000/svg";
+        row = document.createElement("button");
+        row.type = "button";
+        row.setAttribute(ATTR, "remote-row");
+        row.title = "DeepSeek Remote";
+        var ic = document.createElementNS(SVGNS, "svg");
+        ic.setAttribute("viewBox", "0 0 24 24");
+        ic.setAttribute("fill", "none");
+        ic.setAttribute("stroke", "currentColor");
+        ic.setAttribute("stroke-width", "1.7");
+        ic.setAttribute("stroke-linecap", "round");
+        ic.setAttribute("stroke-linejoin", "round");
+        ic.setAttribute("aria-hidden", "true");
+        var rect = document.createElementNS(SVGNS, "rect");
+        rect.setAttribute("x", "3"); rect.setAttribute("y", "4");
+        rect.setAttribute("width", "18"); rect.setAttribute("height", "13");
+        rect.setAttribute("rx", "2");
+        var stand = document.createElementNS(SVGNS, "path");
+        stand.setAttribute("d", "M8 21h8M12 17v4");
+        ic.appendChild(rect); ic.appendChild(stand);
+        ic.style.cssText = "width:16px;height:16px;flex:0 0 16px;";
+        var label = document.createElement("span");
+        label.textContent = "Remote";
+        row.appendChild(ic); row.appendChild(label);
+        row.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          var btn = findRemoteTrigger();
+          if (btn !== null) btn.click();
+        });
+        nav.appendChild(row);
+      }
+      syncRemoteRowStyle(row, nav);
     }
 
     /* ── delegated clicks ──────────────────────────────────────────
@@ -632,15 +743,8 @@ window.__ModuleLoader__.load({
           return b;
         };
         var remoteItem = mk("DeepSeek Remote", function () {
-          var fa = document.querySelector('[data-slot="sidebar"] [class*="footerActions"]');
-          if (fa === null) return;
-          for (var j = 0; j < fa.children.length; j++) {
-            var row = fa.children[j];
-            if ((row.textContent || "").trim() !== "Remote") continue;
-            var btn = row.querySelector("button") || row;
-            btn.click();
-            return;
-          }
+          var btn = findRemoteTrigger();
+          if (btn !== null) btn.click();
         });
         var usageItem = mk("使用统计", function () {
           var card = document.querySelector("[data-dsh-usage-foot-card]");
@@ -837,12 +941,24 @@ window.__ModuleLoader__.load({
         var sep = mark.dataset.sep || "";
         var occ = parseInt(mark.dataset.occ || "1", 10) || 1;
         if (seg && !mark.dataset.prepend && mark.parentNode) {
-          /* 词频对账：外部文本里该词的出现次数少于装饰时记录数，说明词标
-           * 占掉的正是缺失的那次出现，要回插；次数持平视为宿主已重写全文 */
-          var foreign = foreignText(el).toLowerCase();
-          var cnt = 0, idx = 0, needle = seg.toLowerCase();
-          while ((idx = foreign.indexOf(needle, idx)) !== -1) { cnt += 1; idx += needle.length; }
-          if (cnt < occ) mark.parentNode.insertBefore(document.createTextNode(seg + sep), mark);
+          /* A2 还原：词标后的紧邻文本节点若仍是装饰时截短的 tail（结构没被
+           * 宿主动过），原地补回品牌词——该文本节点始终是 React 管理的那个，
+           * 换模后 React 写值照常生效，胶囊不会定格旧名。 */
+          var tn = mark.nextSibling;
+          if (tn !== null && tn.nodeType === 3 && mark.dataset.tail !== void 0 && tn.nodeValue === mark.dataset.tail) {
+            tn.nodeValue = seg + sep + tn.nodeValue;
+          } else {
+            /* 兜底：结构被宿主动过时才按词频对账回插，且只限「模型没换」——
+             * mid 已变说明词缺失是换模的正常结果，回插会把旧品牌词拼到新名
+             * 前（旧方案定格旧名的帮凶之一） */
+            var host = mark.closest("[data-model-id]");
+            if (host !== null && host.getAttribute("data-model-id") === mark.dataset.mid) {
+              var foreign = foreignText(el).toLowerCase();
+              var cnt = 0, idx = 0, needle = seg.toLowerCase();
+              while ((idx = foreign.indexOf(needle, idx)) !== -1) { cnt += 1; idx += needle.length; }
+              if (cnt < occ) mark.parentNode.insertBefore(document.createTextNode(seg + sep), mark);
+            }
+          }
         }
         mark.remove();
       });
@@ -928,11 +1044,12 @@ window.__ModuleLoader__.load({
           mark.dataset.word = text.slice(at, at + wordLen); /* 原样保留大小写，撤妆还原用 */
           mark.dataset.sep = sep;
           mark.dataset.occ = String(text.toLowerCase().split(lower).length - 1); /* 原文词频，还原对账用 */
-          var frag = document.createDocumentFragment();
-          if (head) frag.appendChild(document.createTextNode(head));
-          frag.appendChild(mark);
-          if (tail) frag.appendChild(document.createTextNode(tail));
-          tn.parentNode.replaceChild(frag, tn);
+          /* A2：不再 replaceChild 替换 React 管理的文本节点（旧方案换模后
+           * React 把新名字写进已脱离文档的旧节点，胶囊定格旧模型名）。
+           * 词标前插、原文本原地截短——tn 始终留在文档里，React 随时能写值。 */
+          mark.dataset.tail = tail;
+          tn.nodeValue = head ? head + tail : tail;
+          tn.parentNode.insertBefore(mark, tn);
         } else {
           /* 名字里没有品牌词（如 ds-trae 这类渠道 id）：词标放在名字前面 */
           var tn0 = firstTextNode(el);
@@ -1013,6 +1130,7 @@ window.__ModuleLoader__.load({
             ensureBrand();
             boldSectionLabel();
             ensurePanelToggle();
+            ensureRemotePanelRow();
             applyFooterState();
             ensureAvatarMenuItems();
             var row = sb.querySelector('[data-row-key^="session:"], [data-row-key^="workspace:"]');
@@ -1063,7 +1181,11 @@ window.__ModuleLoader__.load({
             var ed = document.querySelector("[" + ATTR + '~="brand-editor"]');
             if (ed !== null && ed.__claudeLiteOwner === delegateOwner) ed.remove(); /* 只拆自己的浮层 */
             var nav = sb && sb.querySelector('nav[class*="panelList"]');
-            if (nav !== null) nav.style.display = "";
+            if (nav !== null) {
+              var rr = nav.querySelector("[" + ATTR + '~="remote-row"]');
+              if (rr !== null) rr.remove();
+              nav.style.display = "";
+            }
             style.remove();
             try { if (globalThis.__claudeLiteBucketClick === bucketClickHook) delete globalThis.__claudeLiteBucketClick; } catch (e) {}
           };
