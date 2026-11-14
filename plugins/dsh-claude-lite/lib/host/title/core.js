@@ -6,30 +6,46 @@
  * The naming rules are ported from oil-oil/oil-codex-title (MIT); the state
  * machine is based on chancecc99-gif/dsh-title-curator (MIT). Merged into
  * dsh-claude-lite (轻妆) with one functional extension: the category emoji
- * set is user-configurable at runtime — 8 fixed slots, emoji swappable,
- * slot meanings fixed, so auto-classification stays stable.
+ * set is user-configurable at runtime — fixed slots with fixed meanings,
+ * swappable emoji, so auto-classification stays stable. v1.0.6 (B37) grew
+ * the table from 8 to 12 slots.
  */
 
 import { createHash } from 'node:crypto'
 
-/** Bump when prompt rules or fold semantics change: invalidates fingerprints. */
-export const POLICY_VERSION = 5
+/** Bump when prompt rules or fold semantics change: invalidates fingerprints.
+ * v6 (2026-11-14): category table 8 → 12 slots (law/study/comms/data added)
+ * with a hue-deduplicated default emoji set — the prompt's category list
+ * changed, so every stored naming decision fingerprint is stale by design. */
+export const POLICY_VERSION = 6
 
 /**
- * Fixed 8-slot category table. The slot meaning is fixed (it anchors the
+ * Fixed 12-slot category table. The slot meaning is fixed (it anchors the
  * prompt and keeps auto-classification stable); each slot's emoji can be
  * swapped at runtime via setCategories() (host route-backed, persisted in
  * plugin-data). Defaults = the set shipped by dsh-claude-lite.
+ *
+ * v1.0.6 (B37) default emojis were re-picked for color distinctiveness at
+ * sidebar size: one dominant hue family per slot (yellow/orange/red/green/
+ * blue/purple/gold/brown/black/light-gray/multi/blue-gray) — the previous
+ * set muddied on two silver-grays (🛠⚙️), a white calendar (🗓️) and a
+ * skin-tone hand (✍️). Slot order is append-only around `misc` (always
+ * last, always the fallback); new slots must be inserted before it, never
+ * after, or stored 12-slot configs would mis-align.
  */
 export const CATEGORY_SLOTS = [
-  { key: 'tool', emoji: '🛠', text: '工具开发：代码、插件、Skill、自动化的开发与修复' },
+  { key: 'tool', emoji: '🧰', text: '工具开发：代码、插件、Skill、自动化的开发与修复' },
   { key: 'research', emoji: '🔍', text: '对比调研：模型/资料/岗位对比，以形成判断为目标' },
-  { key: 'method', emoji: '✍️', text: '方法整理：方法论、指南、文档、文章、演示文稿' },
+  { key: 'method', emoji: '📙', text: '方法整理：方法论、指南、文档、文章、演示文稿' },
   { key: 'content', emoji: '🎥', text: '内容制作：选题、脚本、拍摄、剪辑、发布' },
-  { key: 'schedule', emoji: '🗓️', text: '日程安排：有明确时间安排的日程、提醒、待办' },
+  { key: 'schedule', emoji: '⏰', text: '日程安排：有明确时间安排的日程、提醒、待办' },
   { key: 'design', emoji: '🎨', text: '页面设计：布局、视觉、动效、样式还原' },
-  { key: 'env', emoji: '⚙️', text: '环境配置：安装、连接、账号或运行环境设置' },
-  { key: 'misc', emoji: '💡', text: '一般讨论：有明确对象但不属于以上类型' },
+  { key: 'env', emoji: '🧩', text: '环境配置：安装、连接、账号或运行环境设置' },
+  { key: 'law', emoji: '⚖️', text: '法律实务：案件分析、文书起草、法律检索、诉讼程序，以具体案件或文书为对象' },
+  { key: 'study', emoji: '📚', text: '学习阅读：课程、书籍、资料消化、培训与学习笔记' },
+  { key: 'comms', emoji: '💬', text: '沟通协作：微信/邮件/客户沟通、会议纪要、群消息整理' },
+  { key: 'data', emoji: '📊', text: '数据整理：表格、清单、台账、汇总统计' },
+  { key: 'misc', emoji: '🔮', text: '一般讨论：有明确对象但不属于以上类型' },
 ]
 
 /** Compare emoji while ignoring the optional U+FE0F variation selector models add or drop. */
@@ -58,7 +74,7 @@ export function categoriesCustomized() {
 }
 
 /**
- * Install a user emoji set (8 strings, one per slot). Validation mirrors the
+ * Install a user emoji set (one string per slot). Validation mirrors the
  * settings UI: each entry must be a single visible emoji (one code point plus
  * at most one U+FE0F variation selector, no duplicates, no invisible
  * look-alikes). Returns {ok, reason?}.
@@ -133,7 +149,7 @@ export function systemPrompt() {
 
 类别（只取一个，且必须是下列之一）：
 ${activeGuideEntries().map(([emoji, text]) => `- ${emoji} ${text}`).join('\n')}
-类别按持续工作的产物或对象选择，不按最后一个动作切换：视频返工仍用 ${byKey.content}，修复视频发布工具本身用 ${byKey.tool}。
+类别按持续工作的产物或对象选择，不按最后一个动作切换：视频返工仍用 ${byKey.content}，修复视频发布工具本身用 ${byKey.tool}，用工具办理案件或起草法律文书归 ${byKey.law}，开发这类工具本身归 ${byKey.tool}。
 
 语言：以 recent 中用户消息的主要语言为准；产品名、工具名、代码标识符保留原文。一句外语、问候或确认不触发语言切换；证据相当时沿用 current_title 的语言。
 
@@ -316,4 +332,69 @@ export function decide({ currentTitle, candidate, conflicts }) {
   if (title === currentTitle) return { action: 'keep', title: currentTitle || '', reason: '标题已符合结构且主线未变' }
   if ((conflicts || []).includes(title)) return { action: 'conflict', title: currentTitle || '', reason: '与已有标题重名' }
   return { action: 'rename', title, reason: candidate?.reason || '' }
+}
+
+/**
+ * Slot keys of the v1 (8-slot) category table, in stored-file order. The
+ * pre-1.0.6 config persisted emojis index-aligned with this array; a v1
+ * file is remapped onto the current slots by key, with slots that did not
+ * exist yet (law/study/comms/data) falling back to their shipped defaults.
+ * Pure so the host loader stays unit-testable.
+ *
+ * NOTE for future slot additions: a stored v2 (12-slot) file is index-aligned
+ * with THIS table — adding slots later needs its own v2→vN remap, same
+ * pattern. The dedupe below exists because a v1 user emoji can legitimately
+ * equal a new slot's default (e.g. misc customized to 💬): the carried value
+ * keeps the slot, and the colliding new slot falls back through
+ * FALLBACK_EMOJIS, then the SPARE_EMOJIS pool, so the migrated set is always
+ * valid (never rejected wholesale).
+ */
+export const LEGACY_EMOJI_KEYS = ['tool', 'research', 'method', 'content', 'schedule', 'design', 'env', 'misc']
+
+/** Ordered alternates per post-v1 slot, tried when its default collides with
+ * a carried v1 emoji. All single-code-point validator-legal. */
+const FALLBACK_EMOJIS = {
+  law: ['🏛️', '📜', '🧿'],
+  study: ['🎓', '📖', '🧠'],
+  comms: ['📢', '📮', '📨'],
+  data: ['📈', '🧮', '🗂️'],
+}
+
+/** Last-resort pool (validator-legal, hue-distinct) if every fallback also
+ * collides — better a neutral dot than a wholesale config reset. */
+const SPARE_EMOJIS = ['🟣', '🟠', '🔵', '🟢', '🟡', '🔴']
+
+/** Remap a v1 (8-entry) emoji list onto the current slot table. Carried
+ * values win their slot; a colliding new-slot default steps aside. */
+export function migrateLegacyEmojis(legacy) {
+  if (!Array.isArray(legacy)) return null
+  const byKey = new Map(LEGACY_EMOJI_KEYS.map((key, i) => [key, legacy[i]]))
+  const result = CATEGORY_SLOTS.map((slot) => {
+    const carried = byKey.get(slot.key)
+    return typeof carried === 'string' && carried ? carried : slot.emoji
+  })
+  // Register the carried (v1) values first: they have priority over new-slot
+  // defaults. v1 sets were validated duplicate-free, so carried values are
+  // mutually distinct and only new slots can collide.
+  const seen = new Set()
+  for (const key of LEGACY_EMOJI_KEYS) {
+    const idx = CATEGORY_SLOTS.findIndex((slot) => slot.key === key)
+    const value = result[idx]
+    if (typeof value === 'string' && value) seen.add(stripVs(value))
+  }
+  return result.map((emoji, i) => {
+    const slot = CATEGORY_SLOTS[i]
+    if (byKey.has(slot.key)) return emoji // carried value: keep as-is
+    if (!seen.has(stripVs(emoji))) {
+      seen.add(stripVs(emoji))
+      return emoji
+    }
+    for (const candidate of [...(FALLBACK_EMOJIS[slot.key] || []), ...SPARE_EMOJIS]) {
+      if (!seen.has(stripVs(candidate))) {
+        seen.add(stripVs(candidate))
+        return candidate
+      }
+    }
+    return emoji // pathological config: let setCategories reject loudly
+  })
 }

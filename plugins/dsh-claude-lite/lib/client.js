@@ -26,8 +26,9 @@
  *     lobe-icons lockups served by the host half, light/dark variants follow
  *     the original class semantics (dsh-combine-mark-color/-mono).
  *  7. Settings overlay — right-click the brand row (or 头像菜单 → 轻妆设置):
- *     brand row editor + the title module's 8 category-emoji slots (persisted
- *     host-side via /dsh-claude-lite/title-config).
+ *     brand row editor + the title module's category-emoji slots (one input
+ *     per slot, rendered from the host config; persisted host-side via
+ *     /dsh-claude-lite/title-config).
  *
  * Mechanism (verified against dsh 0.2.1-rc.5):
  *  - `ctx.get("uiWorkspace")` → workspace browser service; `view` carries the
@@ -534,7 +535,11 @@ window.__ModuleLoader__.load({
     function saveTitleSection(ed) {
       var values = collectTitleInputs(ed);
       var status = ed.querySelector('[data-claude-lite~="title-status"]');
-      if (values === null) { titleStatus(status, "8 个类别 emoji 都要填写", false); return; }
+      if (values === null) {
+        var total = ed.querySelectorAll('[data-claude-lite~="title-emoji"]').length;
+        titleStatus(status, total + " 个类别 emoji 都要填写", false);
+        return;
+      }
       saveTitleCategories(ed, values);
     }
 

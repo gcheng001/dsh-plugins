@@ -20,7 +20,7 @@ import { join, dirname, resolve, extname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { CATEGORY_SLOTS, categoriesCustomized, getCategories, setCategories, validateCategoryList } from "./title/core.js";
+import { CATEGORY_SLOTS, LEGACY_EMOJI_KEYS, categoriesCustomized, getCategories, migrateLegacyEmojis, setCategories, validateCategoryList } from "./title/core.js";
 import { apply as titleApply, titleDataDir } from "./title/index.js";
 
 var name = "dsh-claude-lite";
@@ -176,8 +176,17 @@ function loadCategoriesFromFile(ctx) {
     const raw = JSON.parse(readFileSync(path, "utf8"));
     if (raw && typeof raw.revision === "number") categoryWriteRevision = raw.revision;
     if (raw && Array.isArray(raw.emojis)) {
-      const result = setCategories(raw.emojis);
+      /* v1 (≤1.0.5) stored 8 emojis index-aligned with the legacy slot order;
+       * remap onto the current 12-slot table by key (carried slots keep the
+       * user's emoji, slots that did not exist yet take their defaults). The
+       * file itself is left untouched — migration is in-memory and idempotent,
+       * and the next explicit save persists the 12-slot form (version 2). */
+      const emojis = raw.version === 1 && raw.emojis.length === LEGACY_EMOJI_KEYS.length
+        ? migrateLegacyEmojis(raw.emojis)
+        : raw.emojis;
+      const result = setCategories(emojis);
       if (!result.ok) ctx.logger?.warn?.("dsh-claude-lite: saved category set invalid (" + result.reason + "), using defaults");
+      else if (emojis !== raw.emojis) ctx.logger?.info?.("dsh-claude-lite: migrated v1 category set to " + CATEGORY_SLOTS.length + " slots");
     }
   } catch (error) {
     ctx.logger?.warn?.("dsh-claude-lite: category config unreadable, using defaults: " + String(error?.message ?? error));
@@ -188,7 +197,7 @@ function saveCategoriesFile(emojis, revision) {
   mkdirSync(titleDataDir(), { recursive: true });
   const path = categoriesFilePath();
   const tmp = path + "." + process.pid + ".tmp";
-  writeFileSync(tmp, JSON.stringify({ version: 1, emojis, revision }, null, 2) + "\n", "utf8");
+  writeFileSync(tmp, JSON.stringify({ version: 2, emojis, revision }, null, 2) + "\n", "utf8");
   renameSync(tmp, path);
 }
 
