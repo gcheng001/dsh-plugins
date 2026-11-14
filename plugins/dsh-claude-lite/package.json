@@ -1,7 +1,7 @@
 {
   "name": "dsh-claude-lite",
   "description": "轻妆 Claude Lite — a lightweight homage to dsh-claude-style: pure-CSS skin + sidebar upgrades + model-row brand marks + session title curator for DeepSeek Harness.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "type": "module",
   "main": "lib/host/index.js",

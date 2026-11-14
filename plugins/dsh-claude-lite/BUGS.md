@@ -126,3 +126,14 @@
 - **修法**：skin.css v1.2.1：亮/暗两块 `tooltip-fg` → `tooltip-label: #29261b`（对比度 14.3:1，AAA）；删 nav-item-hover 死定义。
 - **B34 硬规则首次正面执行**：本次先在部署位+运行位修好后，补同步源目录 + monorepo，四处 skin.css MD5 统一 `0674ec…`。教训补充：B34 说「先改源」，但排查类修复天然先在生效位验证——**验证通过后必须回补源目录，才算闭环**。
 - **运维**：皮肤 CSS 改动需完全重启应用生效（⌘R 不可靠，B10 多次应验）。备份：四处同目录 `skin.css.bak-20261113`。
+
+## B36 · 「新建会话」被压成图标挤在顶部（rc.3 flex 横排 × imagegen 满宽切换条）（2026-11-14，已修待桌面验收）
+
+- **现象**：用户升级 DSH 0.2.2-rc.3 后截图：侧栏「新建会话」只剩一个图标薄片贴在 [会话|生图] 切换条右缘，文字不可见；用户要求按钮放回切换条下方、字体与「功能」等区段文字同大小。
+- **第一性原理归因链**：①client.js 全文无 newSession 处理、皮肤 CSS 不做定位 → 位置由宿主 DOM 决定；②拆 rc.3 app.asar：`.newSessionRow{display:flex;align-items:center;gap:6px}`（**flex 横排**）+ `.newSession{flex:auto;min-width:0;overflow:hidden;container-type:inline-size}`；③imagegen `mountSidebarEntry` 把 `[会话|生图]` 切换条（`.sessionTabs{width:100%}`）`insertBefore` 到按钮前面同一行 → 满宽切换条吃掉整行，按钮被压成图标薄片、文字被 overflow 裁掉。④归因对照：imagegen 1.16.0（升级前就在用）切换条 CSS 与 1.17.0 逐字相同 → 插件更新非凶手；**rc.3 把该行改 flex 横排才是**（imagegen 1.16/1.17 自述设计均为「切换条在按钮正上方、按钮保持可见」＝竖排堆叠，rc.2 时代成立）。⑤加重因子：皮肤 v1.1/v1.2 的按钮规格规则 `[class*="newSession"]` 同时命中 `newSessionRow`（子串包含），把行容器也钉成 28px——v1.2 时代行内只有按钮一个子元素，误伤无表现，属潜伏债。
+- **关键事实（新查实）**：rc.3 渲染层无字面量 `data-slot="sidebar"`（全 asar 0 命中），但 slot outlet 运行时以 `{"data-slot": slotKey}` 动态盖章 → 皮肤作用域锚点仍有效（会话行紧凑密度佐证）。查宿主 DOM 锚点**不能只信字面量 grep**，要查 outlet 渲染机制。
+- **修法**（skin.css v1.2.2，仅 CSS）：①`[data-slot="sidebar"] [class*="newSessionRow"] { flex-wrap: wrap; }`——满宽切换条独占第一行，按钮自然落到第二行恢复全宽文本行；②四条按钮规格规则收窄到 `button[class*="newSession"]`，不再误伤行容器。
+- **验证**：真实浏览器 A/B 夹具（rc.3 度量值 + imagegen CSS 原值 + display:contents outlet 骨架）：旧规则复现按钮 16px 薄片/文字被裁（=用户截图形态），新规则按钮 272×28 全宽、12px/600、文字完整、换行正确；无 imagegen（单按钮）不产生第二行。codex 异源审查 **PASS**（0 P0/P1，8 P2：注释两处遗留不准确已改；collapsed 模式无实测，按规则推演无碍——`flex-wrap` 在 column 方向不触发横向分列，留观）。
+- **B34 硬规则执行**：先改源 ① → rsync ② → cp ③④，四处 skin.css MD5 统一 `8876ac50…`；版本 1.0.4→1.0.5。备份：四处同目录 `skin.css.bak-20261114`（= v1.2.1 `0674ec…`）。
+- **运维**：只动 skin.css → **完全重启应用**验收（⌘R 不可靠）。验收点：①顶部 = 切换条（满宽白卡）+ 第二行左对齐「新会话」12px/600 文本行 ②点击可用 ③收起侧栏轨道模式形态正常 ④「功能」头字号与之协调（同为 12px）。
+

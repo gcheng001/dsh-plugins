@@ -1,4 +1,11 @@
-/* 轻妆 · Claude Lite（claude-lite）v1.2.1
+/* 轻妆 · Claude Lite（claude-lite）v1.2.2
+ * v1.2.2（B36）：修复「新建会话」被压成图标挤在顶部——宿主 0.2.2-rc.3 起
+ *   把 .newSessionRow 改成 flex 横排（按钮 flex:auto 自适应填充），而
+ *   dsh-imagegen 的 [会话|生图] 切换条（width:100%）插在按钮前面同一行，
+ *   按钮被压成图标薄片、「新会话」文字被 overflow 裁掉。修法：①行允许
+ *   换行——切换条独占第一行，按钮落到第二行恢复全宽文本行（imagegen
+ *   自述设计：切换条在按钮正上方，按钮保持可见）；②按钮规格规则收窄到
+ *   button 本体（"newSessionRow" 也含 "newSession" 子串，不收窄会误伤行容器）。
  * v1.2.1：修复 tooltip 字色不可读——宿主文字令牌是 --dsw-alias-tooltip-label
  *   （组件 CSS: color:var(--dsw-alias-tooltip-label)），旧版误写为
  *   --dsw-alias-tooltip-fg（宿主 0 消费），字色回落到宿主默认近白色，
@@ -379,8 +386,8 @@ body[data-ds-dark-theme] [data-dsh-part="dialog"] { border-color: var(--dsw-alia
   margin-bottom: 0;
 }
 
-/* 新会话按钮：38px → ~30px */
-[data-slot="sidebar"] [class*="newSession"] {
+/* 新会话按钮：38px → ~30px（B36：收窄到 button，不误伤 newSessionRow 行容器） */
+[data-slot="sidebar"] button[class*="newSession"] {
   padding-top: 5px;
   padding-bottom: 5px;
   margin-bottom: 8px;
@@ -421,9 +428,14 @@ body[data-ds-dark-theme] [data-dsh-part="dialog"] { border-color: var(--dsw-alia
  * v1.2：宿主是 button→LabelMask→Content 三层同构包装，每层被
  *   [class*="newSession"] 命中后各叠 padding 8px + margin 2px，
  *   叠出 ~30px 假缩进（用户反馈"没左对齐"的根因）。内两层归零规则
- *   必须放在主规则之后（同特异性靠源顺序取胜），图标起点才与
- *   「功能」「会话」同列。 */
-[data-slot="sidebar"] [class*="newSession"] {
+ *   必须放在主规则之后（与宿主对这两层的同特异性规则靠源顺序取胜），
+ *   图标起点才与「功能」「会话」同列。
+ * v1.2.2（B36）：rc.3 起 .newSessionRow 为 flex 横排 + 按钮 flex:auto，
+ *   imagegen 切换条 width:100% 插在同一行会把按钮压成图标。允许换行 =
+ *   切换条独占第一行、按钮落第二行恢复全宽「新会话」文本行（12px/600，
+ *   与「功能」头、切换条 tab 同字号）；规格规则同步收窄到 button 本体。 */
+[data-slot="sidebar"] [class*="newSessionRow"] { flex-wrap: wrap; }
+[data-slot="sidebar"] button[class*="newSession"] {
   height: 28px !important;
   line-height: 28px !important;
   padding: 0 8px !important;
@@ -442,7 +454,7 @@ body[data-ds-dark-theme] [data-dsh-part="dialog"] { border-color: var(--dsw-alia
   padding: 0 !important;
   margin: 0 !important;
 }
-[data-slot="sidebar"] [class*="newSession"]:hover {
+[data-slot="sidebar"] button[class*="newSession"]:hover {
   background: var(--dsw-alias-interactive-bg-hover, #0000000a) !important;
   color: var(--dsw-alias-label-primary, #29261b) !important;
 }
@@ -472,8 +484,8 @@ body[data-ds-dark-theme] [data-dsh-part="dialog"] { border-color: var(--dsw-alia
 [data-slot="sidebar"] [data-row-key]:hover { color: var(--dsw-alias-label-primary, #29261b); }
 [data-slot="sidebar"] [data-row-key][class*="selected"] { color: var(--dsw-alias-label-primary, #29261b); }
 
-/* 新会话按钮：保留宿主默认高度（B7），只收紧下间距 */
-[data-slot="sidebar"] [class*="newSession"] { margin-bottom: 6px; }
+/* 新会话按钮：只收紧下间距（高度由上方主规则钉 28px；B36：收窄到 button） */
+[data-slot="sidebar"] button[class*="newSession"] { margin-bottom: 6px; }
 
 /* 插件区行：与会话区完全同规格（v0.9 —— !important 钉死，含「更多」锚点行；
  * 宿主原生 7px padding + 22px 行高 = 36px，必须连 padding 一起压） */
